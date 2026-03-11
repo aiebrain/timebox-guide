@@ -3,291 +3,483 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⏱️ 타임박싱 플래너 배포 가이드</title>
+  <title>⏱️ 타임박싱 플래너 — 배포 가이드</title>
   <style>
+    :root {
+      --blue: #2563eb;
+      --purple: #7c3aed;
+      --green: #16a34a;
+      --dark: #0f172a;
+      --gray: #64748b;
+      --light: #f8fafc;
+      --border: #e2e8f0;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f8fafc;
-      color: #1e293b;
-      line-height: 1.7;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Segoe UI', sans-serif; background: #f0f4ff; color: var(--dark); }
+
+    /* ── HERO ── */
     .hero {
-      background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
-      color: white;
-      padding: 60px 24px 48px;
+      background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      padding: 72px 24px 80px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
-    .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; }
-    .hero p { font-size: 1.1rem; opacity: 0.9; max-width: 480px; margin: 0 auto 24px; }
-    .hero .badge {
-      display: inline-block;
-      background: rgba(255,255,255,0.2);
-      border-radius: 20px;
-      padding: 6px 16px;
-      font-size: 0.85rem;
-      margin: 4px;
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.3) 0%, transparent 70%);
     }
-    .demo-btn {
-      display: inline-block;
-      margin-top: 20px;
-      background: white;
-      color: #1d4ed8;
-      padding: 12px 28px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 1rem;
+    .hero-inner { position: relative; max-width: 600px; margin: 0 auto; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 100px; padding: 6px 16px;
+      color: #a5b4fc; font-size: 0.8rem; font-weight: 600;
+      margin-bottom: 20px; letter-spacing: 0.05em;
     }
-    .container { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
-    .flow {
-      background: white;
-      border-radius: 16px;
-      padding: 28px;
-      margin-bottom: 32px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      text-align: center;
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800; color: white;
+      line-height: 1.15; margin-bottom: 16px;
     }
-    .flow h2 { font-size: 1rem; color: #64748b; margin-bottom: 20px; }
-    .steps-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
+    .hero h1 span { background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.05rem; color: #94a3b8; margin-bottom: 32px; line-height: 1.7; }
+    .hero-badges { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+    .hero-badge {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 100px; padding: 6px 14px;
+      color: #cbd5e1; font-size: 0.82rem;
     }
-    .step-chip {
-      background: #eff6ff;
-      border: 1.5px solid #bfdbfe;
-      border-radius: 12px;
-      padding: 10px 18px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #1d4ed8;
+    .btn-demo {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white; padding: 14px 32px; border-radius: 12px;
+      text-decoration: none; font-weight: 700; font-size: 1rem;
+      box-shadow: 0 8px 32px rgba(79,70,229,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .arrow { color: #94a3b8; font-size: 1.2rem; }
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 28px 32px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    .btn-demo:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(79,70,229,0.5); }
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap {
+      background: white; border-bottom: 1px solid var(--border);
+      padding: 0 24px; position: sticky; top: 0; z-index: 100;
     }
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
+    .progress-inner {
+      max-width: 680px; margin: 0 auto;
+      display: flex; align-items: center; gap: 0;
     }
-    .step-num {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
-      color: white;
-      border-radius: 50%;
+    .prog-step {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 14px 8px;
+      font-size: 0.78rem; font-weight: 600; color: #94a3b8;
+      border-bottom: 2px solid transparent;
+      cursor: default; white-space: nowrap;
+    }
+    .prog-step.active { color: var(--blue); border-color: var(--blue); }
+    .prog-step .pnum {
+      width: 20px; height: 20px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 1rem;
-      flex-shrink: 0;
+      background: #e2e8f0; font-size: 0.7rem; font-weight: 700; color: #94a3b8;
     }
-    .card-header h2 { font-size: 1.15rem; font-weight: 700; }
-    .card-header .skip { font-size: 0.75rem; color: #94a3b8; margin-left: auto; }
-    ol { padding-left: 20px; }
-    ol li { margin-bottom: 10px; font-size: 0.95rem; }
+    .prog-step.active .pnum { background: var(--blue); color: white; }
+
+    /* ── MAIN LAYOUT ── */
+    .main { max-width: 680px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* ── STEP CARD ── */
+    .step-card {
+      background: white; border-radius: 20px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      margin-bottom: 24px; overflow: hidden;
+    }
+    .step-head {
+      display: flex; align-items: center; gap: 16px;
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .step-badge {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800; flex-shrink: 0;
+    }
+    .step-title { flex: 1; }
+    .step-title h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 3px; }
+    .step-title p { font-size: 0.8rem; color: var(--gray); }
+    .step-skip {
+      background: #f1f5f9; border-radius: 6px; padding: 4px 10px;
+      font-size: 0.72rem; color: var(--gray); white-space: nowrap;
+    }
+    .step-body { padding: 24px 28px; }
+
+    /* ── LIST ── */
+    .guide-list { list-style: none; }
+    .guide-list li {
+      display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start;
+    }
+    .guide-list li:last-child { margin-bottom: 0; }
+    .li-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: #eff6ff; color: var(--blue);
+      font-size: 0.78rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .li-content { flex: 1; font-size: 0.92rem; line-height: 1.65; }
+
+    /* ── LINK BOX ── */
     .link-box {
-      background: #f1f5f9;
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin: 12px 0;
-      font-family: monospace;
-      font-size: 0.9rem;
-      word-break: break-all;
+      display: flex; align-items: center; gap: 10px;
+      background: #f8faff; border: 1.5px solid #c7d7ff;
+      border-radius: 10px; padding: 11px 16px; margin: 10px 0;
     }
-    .link-box a { color: #1d4ed8; text-decoration: none; font-weight: 600; }
-    .tip {
-      background: #f0fdf4;
-      border-left: 3px solid #22c55e;
-      border-radius: 0 8px 8px 0;
-      padding: 10px 14px;
-      margin: 12px 0;
-      font-size: 0.88rem;
-      color: #166534;
+    .link-icon { font-size: 1rem; flex-shrink: 0; }
+    .link-box a { color: var(--blue); text-decoration: none; font-weight: 600; font-size: 0.88rem; word-break: break-all; }
+    .link-box a:hover { text-decoration: underline; }
+
+    /* ── CLICK HINT (버튼 시각화) ── */
+    .click-hint {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fef9c3; border: 1.5px solid #fde047;
+      border-radius: 8px; padding: 8px 14px;
+      font-size: 0.85rem; font-weight: 700; color: #854d0e;
+      margin: 8px 0;
     }
-    .warn {
-      background: #fefce8;
-      border-left: 3px solid #eab308;
-      border-radius: 0 8px 8px 0;
-      padding: 10px 14px;
-      margin: 12px 0;
-      font-size: 0.88rem;
-      color: #713f12;
+    .btn-mock {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+      color: white; border-radius: 7px; padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 700;
     }
+    .btn-mock-gray {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #f1f5f9; border: 1px solid #cbd5e1;
+      color: #334155; border-radius: 7px; padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 700;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 0.85rem; line-height: 1.6; margin: 12px 0;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .callout-blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout-green { background: #f0fdf4; border-left: 3px solid #22c55e; color: #14532d; }
+    .callout-yellow { background: #fefce8; border-left: 3px solid #facc15; color: #713f12; }
+    .callout-red { background: #fef2f2; border-left: 3px solid #f87171; color: #7f1d1d; }
+    .callout-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── SUCCESS BOX ── */
     .success-box {
       background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-      border: 1.5px solid #86efac;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      margin: 12px 0;
+      border: 1.5px solid #86efac; border-radius: 14px;
+      padding: 24px; text-align: center; margin-top: 20px;
     }
-    .success-box .url { font-size: 1rem; font-weight: 700; color: #16a34a; font-family: monospace; }
-    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-    th { background: #f1f5f9; padding: 10px 14px; text-align: left; font-size: 0.85rem; color: #64748b; }
-    td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-    .faq { margin-top: 8px; }
-    .faq-item { border-bottom: 1px solid #f1f5f9; padding: 14px 0; }
-    .faq-q { font-weight: 700; color: #1e293b; margin-bottom: 6px; }
-    .faq-a { font-size: 0.9rem; color: #475569; }
+    .success-emoji { font-size: 2.5rem; margin-bottom: 10px; }
+    .success-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #14532d; }
+    .success-url {
+      background: white; border: 1.5px solid #86efac;
+      border-radius: 8px; padding: 10px 16px;
+      font-family: 'Courier New', monospace; font-size: 0.88rem;
+      color: var(--green); font-weight: 700; word-break: break-all;
+    }
+    .success-sub { font-size: 0.78rem; color: var(--gray); margin-top: 10px; }
+
+    /* ── USAGE TABLE ── */
+    .usage-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 4px;
+    }
+    .usage-item {
+      background: #f8fafc; border-radius: 10px; padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
+    .usage-item .step-label { font-size: 0.75rem; color: var(--gray); margin-bottom: 4px; }
+    .usage-item .step-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 3px; }
+    .usage-item .step-desc { font-size: 0.8rem; color: var(--gray); }
+
+    /* ── FAQ ── */
+    .faq-item {
+      border-bottom: 1px solid #f1f5f9; padding: 16px 0;
+    }
+    .faq-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .faq-q { font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .faq-q::before { content: 'Q'; background: #fee2e2; color: #dc2626; border-radius: 5px; padding: 1px 7px; font-size: 0.75rem; }
+    .faq-a { font-size: 0.85rem; color: #475569; line-height: 1.6; padding-left: 28px; }
+
+    /* ── FOOTER ── */
     .footer {
-      text-align: center;
-      padding: 32px 24px;
-      color: #94a3b8;
-      font-size: 0.85rem;
+      background: var(--dark); color: #64748b;
+      text-align: center; padding: 40px 24px;
+      font-size: 0.85rem; line-height: 2;
     }
-    .footer a { color: #1d4ed8; text-decoration: none; }
-    @media (max-width: 500px) {
-      .hero h1 { font-size: 1.5rem; }
-      .card { padding: 20px; }
-      .steps-row { gap: 4px; }
-      .step-chip { padding: 8px 12px; font-size: 0.82rem; }
+    .footer a { color: #818cf8; text-decoration: none; }
+    .footer .footer-logo { font-size: 1.5rem; margin-bottom: 8px; }
+
+    @media (max-width: 520px) {
+      .step-head { padding: 18px 20px 16px; }
+      .step-body { padding: 18px 20px; }
+      .usage-grid { grid-template-columns: 1fr; }
+      .prog-step span:not(.pnum) { display: none; }
     }
   </style>
 </head>
 <body>
 
+<!-- HERO -->
 <div class="hero">
-  <h1>⏱️ 타임박싱 플래너</h1>
-  <p>나만의 AI 시간관리 플래너를<br>10분 만에 무료로 배포하세요</p>
-  <span class="badge">🖱️ 클릭만 하면 됩니다</span>
-  <span class="badge">💰 완전 무료</span>
-  <span class="badge">⏰ 약 10분</span>
-  <br>
-  <a class="demo-btn" href="https://timebox-planner-red.vercel.app" target="_blank">🔍 데모 먼저 보기</a>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">⏱️ AI 커머스 브레인 @aiebrain</div>
+    <h1>타임박싱 플래너를<br><span>내 것으로</span> 만들기</h1>
+    <p>Git을 몰라도 괜찮아요.<br>클릭 몇 번으로 나만의 시간관리 앱을 무료로 배포하세요.</p>
+    <div class="hero-badges">
+      <span class="hero-badge">🖱️ Git 불필요</span>
+      <span class="hero-badge">⏰ 약 10분</span>
+      <span class="hero-badge">💰 완전 무료</span>
+      <span class="hero-badge">📱 모바일 지원</span>
+    </div>
+    <a class="btn-demo" href="https://timebox-planner-red.vercel.app" target="_blank">
+      🔍 데모 먼저 체험하기
+    </a>
+  </div>
 </div>
 
-<div class="container">
+<!-- STICKY PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <div class="prog-step active"><span class="pnum">1</span><span>GitHub 가입</span></div>
+    <div class="prog-step active"><span class="pnum">2</span><span>Fork</span></div>
+    <div class="prog-step active"><span class="pnum">3</span><span>Vercel 배포</span></div>
+    <div class="prog-step active"><span class="pnum">🎉</span><span>완성</span></div>
+  </div>
+</div>
 
-  <!-- 전체 흐름 -->
-  <div class="flow">
-    <h2>전체 흐름</h2>
-    <div class="steps-row">
-      <div class="step-chip">① GitHub 가입</div>
-      <span class="arrow">→</span>
-      <div class="step-chip">② Fork (복사)</div>
-      <span class="arrow">→</span>
-      <div class="step-chip">③ Vercel 배포</div>
-      <span class="arrow">→</span>
-      <div class="step-chip">🎉 내 URL 완성</div>
+<!-- MAIN -->
+<div class="main">
+
+  <!-- STEP 1 -->
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-badge">1</div>
+      <div class="step-title">
+        <h2>GitHub 계정 만들기</h2>
+        <p>코드를 저장하는 곳입니다 (무료)</p>
+      </div>
+      <span class="step-skip">이미 있으면 스킵 →</span>
+    </div>
+    <div class="step-body">
+      <ul class="guide-list">
+        <li>
+          <div class="li-num">1</div>
+          <div class="li-content">
+            아래 링크를 클릭해서 가입 페이지로 이동하세요
+            <div class="link-box"><span class="link-icon">🌐</span><a href="https://github.com/signup" target="_blank">https://github.com/signup</a></div>
+          </div>
+        </li>
+        <li>
+          <div class="li-num">2</div>
+          <div class="li-content">이메일 주소 입력 → 비밀번호 설정 → 닉네임(username) 입력</div>
+        </li>
+        <li>
+          <div class="li-num">3</div>
+          <div class="li-content">
+            메일함에서 인증 코드 확인 후 입력
+            <div class="callout callout-yellow"><span class="callout-icon">📧</span>메일이 안 보이면 스팸함도 확인해보세요!</div>
+          </div>
+        </li>
+        <li>
+          <div class="li-num">4</div>
+          <div class="li-content">요금제 선택 화면에서 <strong>무료(Free)</strong> 선택 → 완료!</div>
+        </li>
+      </ul>
     </div>
   </div>
 
-  <!-- Step 1 -->
-  <div class="card">
-    <div class="card-header">
-      <div class="step-num">1</div>
-      <h2>GitHub 계정 만들기</h2>
-      <span class="skip">이미 있으면 건너뛰세요</span>
+  <!-- STEP 2 -->
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-badge">2</div>
+      <div class="step-title">
+        <h2>내 계정으로 복사하기 (Fork)</h2>
+        <p>원본 코드를 내 GitHub에 복사합니다</p>
+      </div>
     </div>
-    <ol>
-      <li>아래 링크를 클릭하세요
-        <div class="link-box"><a href="https://github.com/signup" target="_blank">https://github.com/signup</a></div>
-      </li>
-      <li>이메일 주소 입력 → 비밀번호 설정 → 닉네임(username) 입력</li>
-      <li>메일함에서 인증 코드 확인 후 입력</li>
-      <li>무료 플랜(Free) 선택 → 완료!</li>
-    </ol>
+    <div class="step-body">
+      <div class="callout callout-blue"><span class="callout-icon">💡</span>Fork란? 원본은 그대로 두고 내 계정에 똑같은 사본을 만드는 것입니다. <strong>반드시 GitHub에 로그인된 상태</strong>여야 해요!</div>
+      <ul class="guide-list" style="margin-top:16px">
+        <li>
+          <div class="li-num">1</div>
+          <div class="li-content">
+            아래 링크로 이동하세요
+            <div class="link-box"><span class="link-icon">📁</span><a href="https://github.com/aiebrain/timebox-planner" target="_blank">https://github.com/aiebrain/timebox-planner</a></div>
+          </div>
+        </li>
+        <li>
+          <div class="li-num">2</div>
+          <div class="li-content">
+            페이지 오른쪽 상단에서 Fork 버튼을 찾아 클릭하세요
+            <div style="margin-top:8px">
+              <div class="click-hint">👆 이 버튼을 클릭! &nbsp;<span class="btn-mock-gray">🍴 Fork</span></div>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="li-num">3</div>
+          <div class="li-content">
+            팝업창에서 <span class="btn-mock">Create fork</span> 버튼 클릭
+          </div>
+        </li>
+        <li>
+          <div class="li-num">4</div>
+          <div class="li-content">
+            주소창이 바뀌면 성공!
+            <div class="callout callout-green"><span class="callout-icon">✅</span>주소창에 <strong>github.com/<em>내닉네임</em>/timebox-planner</strong> 가 보이면 완료입니다.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
   </div>
 
-  <!-- Step 2 -->
-  <div class="card">
-    <div class="card-header">
-      <div class="step-num">2</div>
-      <h2>내 계정으로 복사하기 (Fork)</h2>
+  <!-- STEP 3 -->
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-badge">3</div>
+      <div class="step-title">
+        <h2>Vercel로 인터넷에 올리기</h2>
+        <p>코드를 실제 웹사이트로 만들어줍니다 (무료)</p>
+      </div>
     </div>
-    <div class="tip">💡 "Fork"란? 원본 코드를 내 계정으로 가져오는 것입니다. GitHub에 로그인된 상태여야 해요!</div>
-    <ol>
-      <li>아래 링크를 클릭하세요
-        <div class="link-box"><a href="https://github.com/aiebrain/timebox-planner" target="_blank">https://github.com/aiebrain/timebox-planner</a></div>
-      </li>
-      <li>페이지 오른쪽 상단 <strong>[Fork 🍴]</strong> 버튼 클릭</li>
-      <li><strong>[Create fork]</strong> 버튼 클릭</li>
-      <li>주소창이 <code>github.com/<strong>내닉네임</strong>/timebox-planner</code> 로 바뀌면 성공! ✅</li>
-    </ol>
-  </div>
-
-  <!-- Step 3 -->
-  <div class="card">
-    <div class="card-header">
-      <div class="step-num">3</div>
-      <h2>Vercel로 배포하기</h2>
-    </div>
-    <div class="tip">💡 "Vercel"이란? 코드를 인터넷에 올려주는 무료 서비스입니다.</div>
-    <ol>
-      <li>아래 링크를 클릭하세요
-        <div class="link-box"><a href="https://vercel.com/signup" target="_blank">https://vercel.com/signup</a></div>
-      </li>
-      <li><strong>"Continue with GitHub"</strong> 버튼 클릭 (방금 만든 GitHub 계정으로 로그인)</li>
-      <li>상단 <strong>"Add New → Project"</strong> 클릭</li>
-      <li>목록에서 <strong>timebox-planner</strong> 찾아 <strong>[Import]</strong> 클릭
-        <div class="warn">⚠️ 목록에 없으면 ② 단계(Fork)를 먼저 해주세요!</div>
-      </li>
-      <li>아무것도 건드리지 말고 <strong>[Deploy]</strong> 버튼 클릭</li>
-      <li>1~2분 기다리기 (초록색 로그가 내려가는 건 정상이에요 😊)</li>
-      <li>🎉 <strong>"Congratulations!"</strong> 화면이 뜨면 완료!</li>
-    </ol>
-    <div class="success-box">
-      <div style="font-size:1.5rem; margin-bottom:8px">🎉</div>
-      <div style="font-weight:700; margin-bottom:4px">내 전용 URL이 생겼어요!</div>
-      <div class="url">timebox-planner-내닉네임.vercel.app</div>
-      <div style="font-size:0.82rem; color:#64748b; margin-top:8px">📌 이 주소를 북마크해두세요!</div>
+    <div class="step-body">
+      <div class="callout callout-blue"><span class="callout-icon">💡</span>Vercel이란? 내 코드를 인터넷 주소가 있는 웹사이트로 만들어주는 무료 서비스입니다.</div>
+      <ul class="guide-list" style="margin-top:16px">
+        <li>
+          <div class="li-num">1</div>
+          <div class="li-content">
+            아래 링크로 이동하세요
+            <div class="link-box"><span class="link-icon">🌐</span><a href="https://vercel.com/signup" target="_blank">https://vercel.com/signup</a></div>
+          </div>
+        </li>
+        <li>
+          <div class="li-num">2</div>
+          <div class="li-content">
+            <span class="btn-mock">Continue with GitHub</span> 버튼 클릭
+            <div class="callout callout-yellow" style="margin-top:8px"><span class="callout-icon">⚠️</span>이메일/비밀번호가 아니라 <strong>GitHub 버튼</strong>으로 로그인해야 연동이 됩니다!</div>
+          </div>
+        </li>
+        <li>
+          <div class="li-num">3</div>
+          <div class="li-content">
+            상단 메뉴에서 <strong>Add New → Project</strong> 클릭
+          </div>
+        </li>
+        <li>
+          <div class="li-num">4</div>
+          <div class="li-content">
+            목록에서 <strong>timebox-planner</strong> 를 찾아 <span class="btn-mock">Import</span> 클릭
+            <div class="callout callout-red" style="margin-top:8px"><span class="callout-icon">🚨</span>목록에 없나요? 위의 ② 단계(Fork)를 먼저 해주세요!</div>
+          </div>
+        </li>
+        <li>
+          <div class="li-num">5</div>
+          <div class="li-content">
+            설정을 건드리지 말고 그냥 <span class="btn-mock">Deploy</span> 버튼 클릭!
+            <div class="callout callout-blue" style="margin-top:8px"><span class="callout-icon">⏳</span>1~2분 기다리세요. 초록색 로그가 쭉 내려가는 건 정상입니다 😊</div>
+          </div>
+        </li>
+      </ul>
+      <div class="success-box">
+        <div class="success-emoji">🎉</div>
+        <div class="success-title">Congratulations! 배포 완료!</div>
+        <div class="success-url">timebox-planner-내닉네임.vercel.app</div>
+        <div class="success-sub">📌 이 주소를 복사해서 북마크해 두세요!</div>
+      </div>
     </div>
   </div>
 
   <!-- 사용 방법 -->
-  <div class="card">
-    <div class="card-header">
-      <div class="step-num" style="background: linear-gradient(135deg,#059669,#0d9488)">📋</div>
-      <h2>사용 방법</h2>
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-badge" style="background:linear-gradient(135deg,#059669,#0d9488); font-size:1.2rem">📋</div>
+      <div class="step-title">
+        <h2>사용 방법</h2>
+        <p>매일 아침 5분으로 하루를 설계하세요</p>
+      </div>
     </div>
-    <table>
-      <tr><th>단계</th><th>기능</th></tr>
-      <tr><td>1️⃣ 브레인 덤프</td><td>머릿속 할 일을 전부 쏟아내기</td></tr>
-      <tr><td>2️⃣ 빅 3 선정</td><td>오늘 반드시 끝낼 3가지 선택</td></tr>
-      <tr><td>3️⃣ 타임라인</td><td>시간대별 작업 배치 (드래그&드롭)</td></tr>
-      <tr><td>4️⃣ 리뷰</td><td>하루 마무리 회고 저장</td></tr>
-    </table>
-    <div class="tip">📱 스마트폰에서도 사용 가능! 브라우저 메뉴 → "홈 화면에 추가" → 앱처럼 실행</div>
+    <div class="step-body">
+      <div class="usage-grid">
+        <div class="usage-item">
+          <div class="step-label">STEP 1</div>
+          <div class="step-name">🧠 브레인 덤프</div>
+          <div class="step-desc">머릿속 할 일을 전부 쏟아내기</div>
+        </div>
+        <div class="usage-item">
+          <div class="step-label">STEP 2</div>
+          <div class="step-name">🎯 빅 3 선정</div>
+          <div class="step-desc">오늘 반드시 끝낼 3가지 선택</div>
+        </div>
+        <div class="usage-item">
+          <div class="step-label">STEP 3</div>
+          <div class="step-name">⏰ 타임라인</div>
+          <div class="step-desc">시간대별 작업 배치 (드래그&드롭)</div>
+        </div>
+        <div class="usage-item">
+          <div class="step-label">STEP 4</div>
+          <div class="step-name">📝 리뷰</div>
+          <div class="step-desc">하루 마무리 회고 저장</div>
+        </div>
+      </div>
+      <div class="callout callout-blue" style="margin-top:16px"><span class="callout-icon">📱</span>스마트폰에서 브라우저 메뉴 → <strong>"홈 화면에 추가"</strong> 하면 앱처럼 사용 가능!</div>
+    </div>
   </div>
 
   <!-- FAQ -->
-  <div class="card">
-    <div class="card-header">
-      <div class="step-num" style="background: linear-gradient(135deg,#dc2626,#ea580c)">❓</div>
-      <h2>자주 하는 실수</h2>
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-badge" style="background:linear-gradient(135deg,#dc2626,#ea580c); font-size:1.2rem">❓</div>
+      <div class="step-title">
+        <h2>자주 묻는 질문</h2>
+        <p>막히는 부분이 있으면 여기서 확인하세요</p>
+      </div>
     </div>
-    <div class="faq">
+    <div class="step-body">
       <div class="faq-item">
         <div class="faq-q">Fork 버튼이 안 보여요</div>
-        <div class="faq-a">→ GitHub 로그인이 안 된 상태예요. 오른쪽 상단 [Sign in] 먼저 클릭!</div>
+        <div class="faq-a">GitHub에 로그인이 안 된 상태예요. 오른쪽 상단 [Sign in] 버튼을 먼저 클릭하세요.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q">Import에서 timebox-planner가 안 보여요</div>
-        <div class="faq-a">→ Fork를 먼저 해야 해요. ② 단계를 다시 해주세요.</div>
+        <div class="faq-q">Import 목록에 timebox-planner가 없어요</div>
+        <div class="faq-a">Fork를 먼저 해야 합니다. ② 단계를 다시 진행해주세요.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q">배포 중 빨간 에러가 났어요</div>
-        <div class="faq-a">→ 스크린샷 찍어서 오픈채팅방에 올려주세요!</div>
+        <div class="faq-a">스크린샷 찍어서 아래 오픈채팅방에 올려주시면 도와드립니다!</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q">데이터가 저장되나요?</div>
-        <div class="faq-a">→ 내 브라우저에만 저장됩니다. 서버 전송 없음, 개인정보 유출 없음 ✅</div>
+        <div class="faq-q">내 데이터가 다른 사람에게 보이나요?</div>
+        <div class="faq-a">아니요. 모든 데이터는 내 브라우저 안에만 저장됩니다. 서버로 전송되지 않아 완전히 안전합니다.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">계속 무료로 쓸 수 있나요?</div>
+        <div class="faq-a">네! Vercel 개인 무료 플랜으로 개인 사용은 영구 무료입니다.</div>
       </div>
     </div>
   </div>
 
 </div>
 
+<!-- FOOTER -->
 <div class="footer">
-  만든 사람: <a href="https://www.youtube.com/@aiebrain" target="_blank">AI 커머스 브레인 @aiebrain</a><br>
-  질문/오류: <a href="https://open.kakao.com/o/gfNHYBwh" target="_blank">오픈채팅 바로가기</a>
+  <div class="footer-logo">⏱️</div>
+  <div><strong style="color:#e2e8f0">타임박싱 플래너</strong> — AI 커머스 브레인 제작</div>
+  <div>
+    유튜브 <a href="https://www.youtube.com/@aiebrain" target="_blank">@aiebrain</a>
+    &nbsp;·&nbsp;
+    오픈채팅 <a href="https://open.kakao.com/o/gfNHYBwh" target="_blank">바로가기</a>
+    &nbsp;·&nbsp;
+    데모 <a href="https://timebox-planner-red.vercel.app" target="_blank">체험하기</a>
+  </div>
 </div>
 
 </body>
